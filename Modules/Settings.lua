@@ -76,15 +76,44 @@ StaticPopupDialogs["MDTNPI_COPY_LINK"] = {
   preferredIndex = 3,
 }
 
-local function addCredits(layout)
-  layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["Ability data by %s"]:format(TACTYKS),
-    L["Ability tags, notes and important picks for Midnight Seasons 1 and 2 come from Tactyks' M+ Ability Tracking Sheets, used with his permission."]))
-  if not CreateSettingsButtonInitializer then return end
+-- The credits get their own canvas page rather than rows in the settings list:
+-- Blizzard pools those rows across all pages, and a button row first used by
+-- an add-on taints Blizzard's own settings that reuse it (e.g. Social's, which
+-- call protected functions), so searching Options got the add-on blocked.
+local function createCreditsPage()
+  local page = CreateFrame("Frame")
+
+  local title = page:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
+  title:SetPoint("TOPLEFT", page, "TOPLEFT", 16, -16)
+  title:SetText(L["Ability data by %s"]:format(TACTYKS))
+
+  local text = page:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -12)
+  text:SetPoint("RIGHT", page, "RIGHT", -16, 0)
+  text:SetJustifyH("LEFT")
+  text:SetText(L["Ability tags, notes and important picks for Midnight Seasons 1 and 2 come from Tactyks' M+ Ability Tracking Sheets, used with his permission."])
+
+  local anchor = text
   for _, social in ipairs(SOCIALS) do
     local label, url = social[1], social[2]
-    layout:AddInitializer(CreateSettingsButtonInitializer(label, L["Copy link"],
-      function() StaticPopup_Show("MDTNPI_COPY_LINK", nil, nil, url) end, url, true))
+    local name = page:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    name:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, anchor == text and -20 or -14)
+    name:SetWidth(100)
+    name:SetJustifyH("LEFT")
+    name:SetText(label)
+
+    local button = CreateFrame("Button", nil, page, "UIPanelButtonTemplate")
+    button:SetSize(110, 22)
+    button:SetPoint("LEFT", name, "RIGHT", 8, 0)
+    button:SetText(L["Copy link"])
+    button:SetScript("OnClick", function() StaticPopup_Show("MDTNPI_COPY_LINK", nil, nil, url) end)
+
+    local link = page:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    link:SetPoint("LEFT", button, "RIGHT", 10, 0)
+    link:SetText(url)
+    anchor = name
   end
+  return page
 end
 
 ---@param getDB fun(): table|nil the saved settings table
@@ -133,9 +162,8 @@ function M:Register(getDB, defaults, maxRows, onChange, addSubcategories)
   Settings_API.CreateSlider(category, proxy("MDTNPI_MAX_ROWS", "maxRows", L["Maximum enemies"]), rowOptions,
     L["How many enemies the panel lists before summarising the rest as \"+N more\"."])
 
-  addCredits(layout)
-
   if addSubcategories then addSubcategories(category) end
+  Settings_API.RegisterCanvasLayoutSubcategory(category, createCreditsPage(), L["Credits"])
   Settings_API.RegisterAddOnCategory(category)
 end
 

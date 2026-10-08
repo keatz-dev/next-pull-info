@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.1
+
+- Fixed: searching the game's Options (e.g. "sc") could get the add-on blocked with "only available to the Blizzard UI".
+
 ## v0.1.0
 
 Initial release.
