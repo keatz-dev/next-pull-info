@@ -1,0 +1,14 @@
+{
+  "name": "npi-tools",
+  "private": true,
+  "type": "module",
+  "description": "Developer tooling for MythicDungeonTools_NextPullInfo (not loaded by WoW)",
+  "scripts": {
+    "check": "node check-lua.mjs",
+    "seed": "node seed-important.mjs",
+    "tactyks": "node fetch-tactyks.mjs"
+  },
+  "dependencies": {
+    "fengari": "^0.1.4"
+  }
+}

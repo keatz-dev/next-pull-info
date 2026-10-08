@@ -1,0 +1,11 @@
+package-as: MythicDungeonTools_NextPullInfo
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - tools
+  - CURSEFORGE.md
+  - icon.png
+  - .github

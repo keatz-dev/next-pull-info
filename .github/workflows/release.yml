@@ -1,0 +1,23 @@
+name: Release
+
+# Pushing a version tag (v1.2.3, or v1.2.3-beta1 for a beta) builds the zip,
+# uploads it to CurseForge and creates a GitHub release.
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: BigWigsMods/packager@v2

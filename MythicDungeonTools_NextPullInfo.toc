@@ -1,0 +1,21 @@
+## Interface: 120100
+## Title: Mythic Dungeon Tools - Next Pull Info
+## Notes: Shows the notable enemies and abilities of the Next Pull Tracker's upcoming pull
+## Author: Keatz
+## X-Credits: Ability tags, notes and important picks by Tactyks
+## Version: @project-version@
+## X-Curse-Project-ID: 1730641
+## Dependencies: MythicDungeonTools, MythicDungeonTools_NextPullTracker
+## SavedVariables: MythicDungeonToolsNextPullInfoDB
+## IconTexture: Interface\AddOns\MythicDungeonTools_NextPullInfo\Textures\Icon
+
+init.lua
+Data\Important.lua
+Data\Seasons.lua
+Modules\Data.lua
+Data\Tactyks.lua
+Modules\Panel.lua
+Modules\Settings.lua
+Modules\ImportantOptions.lua
+Modules\Overview.lua
+Core.lua
