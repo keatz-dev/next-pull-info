@@ -18,13 +18,8 @@ To try it without a key: open MDT on a route, then type `/npt start` and `/npt s
 ## Features
 
 ### Next pull panel
-- Every enemy in the upcoming pull, with a **portrait** and how many there are
-- **One line per ability**: icon, name and its own tags, so you can see at a glance what to kick, dodge, dispel or stop
-- **Important abilities** get a gold frame and are listed first
-- **Bosses** come first and always show every ability
-- Hover any ability for its spell tooltip, plus tags, notes and what counters it (Stoneform, Shadowmeld, Freedom, line of sight)
-- Follows the Next Pull Tracker beacon: it moves, scales, shows and hides with it
-- Attach it to the **right, left, top or bottom** of the beacon
+- The **enemies in your next pull** and the abilities to watch for
+- Hover an ability for its spell tooltip, notes and counters (Stoneform, Shadowmeld, Freedom, line of sight), or share it with your party
 
 ### Trash overview
 Zone into a Mythic dungeon and, before you start the key, a window lists **all the trash with important abilities** in that dungeon. It closes on its own when the key starts. Type `/npi overview` to open it any time.

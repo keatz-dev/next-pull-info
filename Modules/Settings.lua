@@ -49,11 +49,13 @@ local SOCIALS = {
   { "|cfff96854Patreon|r", "https://patreon.com/tactyks" },
 }
 
-StaticPopupDialogs["MDTNPI_COPY_LINK"] = {
-  text = L["Copy this link (Ctrl+C):"],
+-- Text ready to copy: StaticPopup_Show("MDTNPI_COPY", prompt, nil, text).
+-- Also used by the panel's chat lines, as add-ons can't send chat during keys.
+StaticPopupDialogs["MDTNPI_COPY"] = {
+  text = "%s",
   button1 = CLOSE,
   hasEditBox = true,
-  editBoxWidth = 280,
+  editBoxWidth = 350,
   OnShow = function(self, data)
     local box = self.EditBox or self.editBox or (self.GetEditBox and self:GetEditBox())
     box.link = data or self.data or ""
@@ -106,7 +108,7 @@ local function createCreditsPage()
     button:SetSize(110, 22)
     button:SetPoint("LEFT", name, "RIGHT", 8, 0)
     button:SetText(L["Copy link"])
-    button:SetScript("OnClick", function() StaticPopup_Show("MDTNPI_COPY_LINK", nil, nil, url) end)
+    button:SetScript("OnClick", function() StaticPopup_Show("MDTNPI_COPY", L["Copy this link (Ctrl+C):"], nil, url) end)
 
     local link = page:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     link:SetPoint("LEFT", button, "RIGHT", 10, 0)
@@ -140,7 +142,7 @@ function M:Register(getDB, defaults, maxRows, onChange, addSubcategories)
       { "important", L["Important abilities"] },
       { "all", L["All abilities"] },
     }),
-    L["Important: only enemies with abilities marked important (see the Important abilities page), showing just those abilities. All: every enemy and ability. Bosses always show all their abilities."])
+    L["Important: only enemies with abilities marked important (see the Important abilities page), showing just those abilities. All: every enemy and ability."])
 
   Settings_API.CreateCheckbox(category, proxy("MDTNPI_OVERVIEW", "overview", L["Show trash overview before a key"]),
     L["In a Mythic dungeon, before the key starts, open a window listing the trash with important abilities. It closes when the key starts. /npi overview opens it any time."])

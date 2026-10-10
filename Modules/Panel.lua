@@ -136,6 +136,7 @@ local function createPortrait(row)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:SetText(localizedName(entry.name), 1, 1, 1)
     if entry.isBoss then GameTooltip:AddLine(L["Boss"], 1, 0.5, 0) end
+    if entry.addOf then GameTooltip:AddLine(L["Add: %s"]:format(entry.addOf), 1, 0.5, 0) end
     local tags = tagLine(entry.tags)
     if tags ~= "" then GameTooltip:AddLine(tags, 1, 1, 1, true) end
     GameTooltip:Show()
@@ -191,6 +192,7 @@ end
 -- =====================================================================
 
 local CHAT_PREFIX = "|cff00ff80Next Pull Info|r: "
+local MESSAGE_PREFIX = "MDT Next Pull Info: " -- starts each shared ability, so the group knows where it's from
 local MAX_MESSAGE = 255 -- bytes the server accepts in one chat message
 
 local function groupChannel()
@@ -206,19 +208,19 @@ local function trimBytes(text, bytes)
 end
 
 ---One chat line about an ability: link, enemy, tags, counters, note.
-local function chatMessage(group)
+---@param plain boolean the ability's name instead of its link (copied link codes don't paste back)
+local function chatMessage(group, plain)
   local plainTags, counters = {}, {}
   for _, tag in ipairs(group.tags) do
     if isCounter(tag) then counters[#counters + 1] = localizedTag(tag)
     else plainTags[#plainTags + 1] = localizedTag(tag) end
   end
-  local link = C_Spell.GetSpellLink(group.spellId) or group.name
-  local head = link
+  local head = not plain and C_Spell.GetSpellLink(group.spellId) or group.name
   if group.enemy then head = head.." ("..localizedName(group.enemy)..")" end
   local parts = {}
   if #plainTags > 0 then parts[#parts + 1] = table_concat(plainTags, ", ") end
   if #counters > 0 then parts[#parts + 1] = L["Countered by: %s"]:format(table_concat(counters, ", ")) end
-  local body = head..(#parts > 0 and ": "..table_concat(parts, ". ") or "")
+  local body = MESSAGE_PREFIX..head..(#parts > 0 and ": "..table_concat(parts, ". ") or "")
 
   local room = MAX_MESSAGE - #body - 2 -- 2 for ". "
   if group.note and room > 10 then
@@ -229,24 +231,22 @@ local function chatMessage(group)
   return trimBytes(body, MAX_MESSAGE)
 end
 
-local function openChatWith(text)
-  local open = (ChatFrameUtil and ChatFrameUtil.OpenChat) or ChatFrame_OpenChat
-  if open then open(text) end
+---Shows an ability's chat line ready to copy and paste into chat yourself.
+local function copyAbility(group)
+  StaticPopup_Show("MDTNPI_COPY", L["Copy (Ctrl+C), then paste it in chat:"], nil, chatMessage(group, true))
 end
 
----Sends an ability to party (or instance) chat. While Blizzard blocks add-on
----chat (during boss encounters), it's put in the chat box to send with Enter.
+---Sends an ability to party (or instance) chat. Blizzard blocks add-ons from
+---sending chat during keys and encounters (even text they only put in the chat
+---box), so then it's offered to copy instead.
 local function shareAbility(group)
+  local lockdown = C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown()
+  if lockdown then return copyAbility(group) end
   local channel = groupChannel()
   local message = chatMessage(group)
   if not channel then
     print(CHAT_PREFIX..L["Not in a group. This is what would be sent:"])
     print(message)
-    return
-  end
-  local lockdown = C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown()
-  if lockdown then
-    openChatWith((channel == "PARTY" and "/p " or "/i ")..message)
     return
   end
   local send = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
@@ -255,20 +255,48 @@ end
 
 local CHAT_BUTTON = 32
 
-local function createChatButton(line)
+---@param copy boolean copy the ability's chat line (the panel, used during keys) instead of sending it
+local function createChatButton(line, copy)
   local btn = CreateFrame("Button", nil, line)
   btn:SetSize(CHAT_BUTTON, CHAT_BUTTON)
   btn:SetPoint("RIGHT", line, "RIGHT", 0, 0)
-  btn:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
-  btn:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Down")
+  if copy then
+    btn:SetNormalTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
+    btn:SetPushedTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
+    btn:GetPushedTexture():SetVertexColor(0.6, 0.6, 0.6)
+    -- Drawn at half size; the button keeps its full size so it's easy to click.
+    for _, texture in ipairs({ btn:GetNormalTexture(), btn:GetPushedTexture() }) do
+      texture:ClearAllPoints()
+      texture:SetSize(CHAT_BUTTON / 2, CHAT_BUTTON / 2)
+      texture:SetPoint("CENTER")
+    end
+  else
+    btn:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
+    btn:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Down")
+  end
   btn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+  if copy then
+    local highlight = btn:GetHighlightTexture()
+    highlight:ClearAllPoints()
+    highlight:SetSize(CHAT_BUTTON / 2, CHAT_BUTTON / 2)
+    highlight:SetPoint("CENTER")
+  end
   btn:GetNormalTexture():SetAlpha(0.6)
-  btn:SetScript("OnClick", function() if line.icon.group then shareAbility(line.icon.group) end end)
+  btn:SetScript("OnClick", function()
+    local group = line.icon.group
+    if not group then return end
+    if copy then copyAbility(group) else shareAbility(group) end
+  end)
   btn:SetScript("OnEnter", function(self)
     self:GetNormalTexture():SetAlpha(1)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetText(L["Send to party chat"], 1, 1, 1)
-    GameTooltip:AddLine(L["Shares this ability's tags and notes with your group."], 0.7, 0.7, 0.7, true)
+    if copy then
+      GameTooltip:SetText(L["Copy for chat"], 1, 1, 1)
+      GameTooltip:AddLine(L["This ability's tags and notes, ready to paste into chat. Blizzard doesn't let add-ons send chat during keys."], 0.7, 0.7, 0.7, true)
+    else
+      GameTooltip:SetText(L["Send to party chat"], 1, 1, 1)
+      GameTooltip:AddLine(L["Shares this ability's tags and notes with your group."], 0.7, 0.7, 0.7, true)
+    end
     GameTooltip:Show()
   end)
   btn:SetScript("OnLeave", function(self)
@@ -312,7 +340,8 @@ local function layoutLineTags(fontString, tags, width)
   return math.max(#lines, shown, 1)
 end
 
-local function createDetailLine(row)
+---@param copy boolean|nil its chat button copies the ability's chat line instead of sending it
+local function createDetailLine(row, copy)
   local line = CreateFrame("Frame", nil, row)
   line:SetHeight(DETAIL_H)
   line:EnableMouse(true)
@@ -321,7 +350,7 @@ local function createDetailLine(row)
 
   line.icon = createSpellIcon(line, DETAIL_ICON)
   line.icon:SetPoint("TOPLEFT", line, "TOPLEFT", 2, -3)
-  line.chat = createChatButton(line)
+  line.chat = createChatButton(line, copy == true)
 
   line.name = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   line.name:SetPoint("TOPLEFT", line, "TOPLEFT", TAGS_X, -2)
@@ -397,7 +426,7 @@ local function fillRow(row, entry, contentWidth)
   local name = localizedName(entry.name)
   if entry.count > 1 then name = name.." |cffaaaaaax"..entry.count.."|r" end
   row.name:SetText(name)
-  if entry.isBoss then
+  if entry.isBoss or entry.addOf then
     row.name:SetTextColor(1, 0.5, 0)
   elseif entry.hasImportant then
     row.name:SetTextColor(1, 0.82, 0)
@@ -413,7 +442,8 @@ local function fillRow(row, entry, contentWidth)
   local detailCount = entry.isBoss and #entry.groups or math_min(#entry.groups, DETAIL_LIMIT)
   for i = 1, detailCount do
     local group = entry.groups[i]
-    local line = row.details[i] or createDetailLine(row)
+    -- The panel is up during keys, when add-ons can't send chat: copy instead.
+    local line = row.details[i] or createDetailLine(row, true)
     row.details[i] = line
     line:ClearAllPoints()
     line:SetPoint("TOPLEFT", row, "TOPLEFT", TEXT_X, -y)

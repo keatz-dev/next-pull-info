@@ -4,7 +4,7 @@ A companion for **[Next Pull Tracker](https://www.curseforge.com/wow/addons/myth
 
 ## Features
 
-- **Next pull panel**: each enemy with a portrait, count and one line per ability (icon, name, tags). Important abilities get a gold frame and come first; bosses come first and show every ability. Hover for the spell tooltip, notes and counters; click the chat button on the right to share an ability with your party.
+- **Next pull panel**: the enemies in your next pull and the abilities to watch for. Hover an ability for its tooltip, notes and counters, or share it with your party.
 - **Trash overview**: before a Mythic key starts, a window lists the dungeon's trash with important abilities. Closes when the key starts.
 - **Important lists**: tick which abilities matter, keep several lists per dungeon (like MDT routes), and share them as import/export strings.
 - **Follows the beacon**: shows, hides, moves and scales with Next Pull Tracker. Attach it right, left, above or below.
@@ -36,7 +36,7 @@ To try it without a key: open MDT on a route, then `/npt start` and `/npt skip <
 - **Tags, notes and default important picks** for Midnight Seasons 1 and 2 come from Tactyks' sheets (`Data/Tactyks.lua`). Other dungeons use MDT's spell flags and the draft list in `Data/Important.lua`.
 - **Season grouping** on the options page comes from `Data/Seasons.lua`; add new seasons at the top.
 - Spells shared by most of a dungeon's enemies (like Xal'atath's Gift) are hidden.
-- Other add-ons can supply their own data with `MDT_NPI:RegisterAbilityData({ name, dungeons = { [mdtDungeonIndex] = { { spellId, tags, note, important }, ... } } })`.
+- Other add-ons can supply their own data with `MDT_NPI:RegisterAbilityData({ name, dungeons = { [mdtDungeonIndex] = { { spellId, tags, note, important, boss }, ... } } })`. `boss` is the name of the boss whose encounter the ability belongs to.
 
 ## Development
 

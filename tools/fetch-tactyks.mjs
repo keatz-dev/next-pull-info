@@ -131,6 +131,9 @@ for (const sheet of SHEETS) for (const [tab, dungeonIndex] of Object.entries(she
   for (const a of abilities) {
     const fields = [`spellId = ${a.spellId}`, `tags = { ${a.tags.map(luaString).join(", ")} }`];
     if (a.note) fields.push(`note = ${luaString(a.note)}`);
+    // The boss whose section lists it: the add-on defaults these to important
+    // for that boss and its adds.
+    if (a.isBoss) fields.push(`boss = ${luaString(a.mob)}`);
     if (a.important) fields.push("important = true");
     lines.push(`      { ${fields.join(", ")} }, -- ${a.mob}${a.isBoss ? " (boss)" : ""}: ${a.name}`);
   }

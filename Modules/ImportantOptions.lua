@@ -106,7 +106,7 @@ local function updateSummary()
   local dungeonEnemies = mdt().dungeonEnemies[selectedDungeon]
   local common = Data.CommonSpells(dungeonEnemies)
   for _, enemy in ipairs(Data.DungeonEnemies(dungeonEnemies)) do
-    for _, group in ipairs(Data.SpellGroups(enemy.spells, false, common, selectedDungeon)) do
+    for _, group in ipairs(Data.SpellGroups(enemy.spells, false, common, selectedDungeon, enemy)) do
       if Data.IsGroupImportant(group) then marked = marked + 1 end
     end
   end
@@ -174,10 +174,24 @@ local function rebuild()
   local dungeonEnemies = mdt().dungeonEnemies[selectedDungeon]
   local common = Data.CommonSpells(dungeonEnemies)
 
-  local y, headers, rows = 0, 0, 0
-  for _, enemy in ipairs(Data.DungeonEnemies(dungeonEnemies)) do
+  -- Enemies in the data add-on's order (roughly pull order, bosses last), the
+  -- ones it doesn't list after them in MDT order.
+  local entries = {}
+  for i, enemy in ipairs(Data.DungeonEnemies(dungeonEnemies)) do
     -- Alphabetical so rows stay put when ticked (the panel sorts important first).
-    local groups = Data.SpellGroups(enemy.spells, false, common, selectedDungeon)
+    local groups, addOf = Data.SpellGroups(enemy.spells, false, common, selectedDungeon, enemy)
+    local order = Data.SourceOrder(groups, enemy.isBoss or addOf ~= nil)
+    entries[i] = { enemy = enemy, groups = groups, addOf = addOf, order = order, mdtOrder = i }
+  end
+  table.sort(entries, function(a, b)
+    if (a.order ~= nil) ~= (b.order ~= nil) then return a.order ~= nil end
+    if a.order and a.order ~= b.order then return a.order < b.order end
+    return a.mdtOrder < b.mdtOrder
+  end)
+
+  local y, headers, rows = 0, 0, 0
+  for _, entry in ipairs(entries) do
+    local enemy, groups, addOf = entry.enemy, entry.groups, entry.addOf
     if #groups > 0 then
       headers = headers + 1
       local header = acquire(headerPool, headers, createHeader)
@@ -186,6 +200,8 @@ local function rebuild()
       local name = Panel.LocalizedName(enemy.name)
       if enemy.isBoss then
         header.text:SetText(name.."  |cffff8000"..L["Boss"].."|r")
+      elseif addOf then
+        header.text:SetText(name.."  |cffff8000"..L["Add: %s"]:format(addOf).."|r")
       else
         header.text:SetText(name)
       end
@@ -393,7 +409,7 @@ local function createCanvas()
   description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
   description:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
   description:SetJustifyH("LEFT")
-  description:SetText(L["Tick the abilities that important mode should show. Each dungeon can have several lists, like MDT routes; the selected list is the one used. Enemies with no ticked abilities are hidden in important mode; bosses always show all their abilities."])
+  description:SetText(L["Tick the abilities that important mode should show. Each dungeon can have several lists, like MDT routes; the selected list is the one used. Enemies with no ticked abilities are hidden in important mode."])
 
   dropdown = CreateFrame("DropdownButton", nil, frame, "WowStyle1DropdownTemplate")
   dropdown:SetWidth(240)

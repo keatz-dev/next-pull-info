@@ -13,7 +13,7 @@ local MODE_IMPORTANT, MODE_ALL = "important", "all"
 local DEFAULTS = {
   enabled = true,
   -- "important": only enemies with abilities marked important, and only those
-  -- abilities. "all": every enemy and ability MDT knows. Bosses always show all.
+  -- abilities. "all": every enemy and ability MDT knows.
   mode = MODE_IMPORTANT,
   side = "RIGHT",
   maxRows = 4,
